@@ -19,7 +19,8 @@ from django.urls import path, include
 from ninja import NinjaAPI
 
 from account.controllers import account_controller
-from commerce.controllers import products_controller, address_controller, vendor_controller, order_controller
+from commerce.controllers import products_controller, address_controller, vendor_controller, order_controller, \
+    wishes_controller
 from config import settings
 
 api = NinjaAPI(title='ECOM API for everyone', version='2.0.0', description='This is the REST API for our gorgeous ECOM platform')
@@ -29,6 +30,7 @@ api.add_router('addresses', address_controller)
 api.add_router('vendors', vendor_controller)
 api.add_router('orders', order_controller)
 api.add_router('auth', account_controller)
+api.add_router('wish list',wishes_controller)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
