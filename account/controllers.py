@@ -16,8 +16,6 @@ account_controller = Router(tags=['auth'])
     201: AuthOut,
 })
 def signup(request, account_in: AccountCreate):
-    if account_in.password1 != account_in.password2:
-        return 400, {'detail': 'Passwords do not match!'}
 
     try:
         User.objects.get(email=account_in.email)
@@ -26,7 +24,12 @@ def signup(request, account_in: AccountCreate):
             first_name=account_in.first_name,
             last_name=account_in.last_name,
             email=account_in.email,
-            password=account_in.password1
+            password=account_in.password1,
+            phone_number=account_in.phone_number,
+            Governorate=account_in.Governorate,
+            city=account_in.city,
+            closest_point=account_in.closest_point
+
         )
 
         token = get_tokens_for_user(new_user)

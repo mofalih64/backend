@@ -4,10 +4,7 @@ from ninja import ModelSchema, Schema
 from ninja.orm import create_schema
 from pydantic import UUID4
 
-from commerce.models import Product, Merchant
-
-
-
+from commerce.models import Product
 
 
 class UUIDSchema(Schema):
@@ -18,24 +15,10 @@ class UUIDSchema(Schema):
 
 class VendorOut(UUIDSchema):
     name: str
-    image: str
-
-
-class LabelOut(UUIDSchema):
-    name: str
-
-
-class MerchantOut(ModelSchema):
-    class Config:
-        model = Merchant
-        model_fields = ['id', 'name']
 
 
 class CategoryOut(UUIDSchema):
     name: str
-    description: str
-    image: str
-    children: List['CategoryOut'] = None
 
 
 CategoryOut.update_forward_refs()
@@ -43,22 +26,24 @@ CategoryOut.update_forward_refs()
 
 class ProductOut(ModelSchema):
     vendor: VendorOut
-    label: LabelOut
-    merchant: MerchantOut
+
     category: CategoryOut
 
     class Config:
         model = Product
         model_fields = ['id',
                         'name',
+                        'image',
                         'description',
-                        'qty',
+                        'weight',
+                        'length',
+                        'width',
+                        'height',
+                        'on_charge',
                         'price',
                         'discounted_price',
                         'vendor',
                         'category',
-                        'label',
-                        'merchant',
 
                         ]
 
@@ -67,12 +52,18 @@ class ProductOut(ModelSchema):
 #     pass
 
 
-class CitySchema(Schema):
-    name: str
+class WishesSchema(Schema):
+    product: ProductOut
 
+class WishesCreate(Schema):
+    product_id:UUID4
 
-class CitiesOut(CitySchema, UUIDSchema):
+class WishesOut(UUIDSchema,WishesSchema):
     pass
+
+
+
+
 
 
 class ItemSchema(Schema):
@@ -89,5 +80,3 @@ class ItemCreate(Schema):
 
 class ItemOut(UUIDSchema, ItemSchema):
     pass
-
-

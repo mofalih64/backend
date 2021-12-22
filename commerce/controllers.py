@@ -9,20 +9,20 @@ from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate, CategoryOut
+from commerce.models import Product, Category, Vendor, Item, Order, OrderStatus, Wish_list
+from commerce.schemas import ProductOut, VendorOut, ItemOut, ItemSchema, ItemCreate, CategoryOut, WishesCreate, \
+    WishesOut
 from config.utils.schemas import MessageOut
 
 products_controller = Router(tags=['products'])
 address_controller = Router(tags=['addresses'])
 vendor_controller = Router(tags=['vendors'])
 order_controller = Router(tags=['orders'])
+wishes_controller = Router(tags=['wish list'])
 
 User = get_user_model()
 
-@vendor_controller.get('', response=List[VendorOut])
-def list_vendors(request):
-    return Vendor.objects.all()
+
 
 
 @products_controller.get('', summary='List all products', response={
@@ -35,6 +35,8 @@ def list_products(
         price_from: int = None,
         price_to: int = None,
         vendor=None,
+        on_charge=None,
+        category=None,
 ):
     """
     To create an order please provide:
@@ -43,7 +45,7 @@ def list_products(
      - and **list of Items** *(product + amount)*
     """
     products_qs = Product.objects.filter(is_active=True)\
-        .select_related('merchant', 'vendor', 'category', 'label')
+        .select_related('vendor', 'category',)
 
     if not products_qs:
         return 404, {'detail': 'No products found'}
@@ -60,7 +62,13 @@ def list_products(
         products_qs = products_qs.filter(discounted_price__lte=price_to)
 
     if vendor:
-        products_qs = products_qs.filter(vendor_id=vendor)
+        products_qs = products_qs.filter(vendor__name=vendor)
+
+    if on_charge:
+        products_qs = products_qs.filter(on_charge=on_charge)
+
+    if category:
+        products_qs = products_qs.filter(category__name=category)
 
     return products_qs
 
@@ -121,65 +129,45 @@ select * from merchant where id in (mids) * 4 for (label, category and vendor)
 """
 
 
-@address_controller.get('')
-def list_addresses(request):
-    pass
 
-
-@products_controller.get('categories', response=List[CategoryOut])
-def list_categories(request):
-    return Category.objects.all()
-
-
-@address_controller.get('cities', response={
-    200: List[CitiesOut],
+@wishes_controller.get('wishes list', response={
+    200: List[WishesOut],
     404: MessageOut
 })
-def list_cities(request):
-    cities_qs = City.objects.all()
+def view_WishesList(request):
+    wishes_items = Item.objects.filter(user=User.objects.first())
 
-    if cities_qs:
-        return cities_qs
+    if wishes_items:
+        return wishes_items
 
-    return 404, {'detail': 'No cities found'}
+    return 404, {'detail': 'Your wishes list is empty!'}
 
 
-@address_controller.get('cities/{id}', response={
-    200: CitiesOut,
-    404: MessageOut
+
+
+
+@wishes_controller.post('add-to-wishes', response={
+    200: MessageOut,
+    # 400: MessageOut
 })
-def retrieve_city(request, id: UUID4):
-    return get_object_or_404(City, id=id)
+def add_update_wishes(request, wishes_in: WishesCreate):
+    try:
+        wish = Wish_list.objects.get(product_id=wishes_in.product_id, user=User.objects.first())
+        wish.save()
+    except Item.DoesNotExist:
+        Wish_list.objects.create(**wishes_in.dict(), user=User.objects.first())
 
+    return 200, {'detail': 'Added to wish list successfully'}
 
-@address_controller.post('cities', response={
-    201: CitiesOut,
-    400: MessageOut
-})
-def create_city(request, city_in: CitySchema):
-    city = City(**city_in.dict())
-    city.save()
-    return 201, city
-
-
-@address_controller.put('cities/{id}', response={
-    200: CitiesOut,
-    400: MessageOut
-})
-def update_city(request, id: UUID4, city_in: CitySchema):
-    city = get_object_or_404(City, id=id)
-    city.name = city_in.name
-    city.save()
-    return 200, city
-
-
-@address_controller.delete('cities/{id}', response={
+@wishes_controller.delete('wish/{id}', response={
     204: MessageOut
 })
-def delete_city(request, id: UUID4):
-    city = get_object_or_404(City, id=id)
-    city.delete()
-    return 204, {'detail': ''}
+def delete_wish(request, id: UUID4):
+    wish = get_object_or_404(Wish_list, id=id, user=User.objects.first())
+    wish.delete()
+
+    return 204, {'detail': 'wish deleted!'}
+
 
 
 @order_controller.get('cart', response={

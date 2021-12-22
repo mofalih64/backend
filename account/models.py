@@ -12,7 +12,7 @@ class CustomUserManager(UserManager):
         case_insensitive_username_field = '{}__iexact'.format(self.model.USERNAME_FIELD)
         return self.get(**{case_insensitive_username_field: username})
 
-    def create_user(self, first_name, last_name, email, password=None):
+    def create_user(self, first_name, last_name, email,phone_number,Governorate,city,closest_point,password=None):
         if not email:
             raise ValueError('user must have email')
 
@@ -22,6 +22,10 @@ class CustomUserManager(UserManager):
         user.set_password(password)
         user.first_name = first_name
         user.last_name = last_name
+        user.phone_number = phone_number
+        user.Governorate = Governorate
+        user.city = city
+        user.closest_point = closest_point
         user.save(using=self._db)
         return user
 
@@ -44,10 +48,9 @@ class User(AbstractUser, Entity):
     username = models.NOT_PROVIDED
     email = models.EmailField(_('email address'), unique=True)
     phone_number = models.CharField(max_length=15, null=True, blank=True)
-    address1 = models.CharField(max_length=255, null=True, blank=True)
-    address2 = models.CharField(max_length=255, null=True, blank=True)
-    company_name = models.CharField(max_length=255, null=True, blank=True)
-    company_website = models.CharField(max_length=255, null=True, blank=True)
+    Governorate = models.CharField(max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=255, null=True, blank=True)
+    closest_point = models.CharField(max_length=255, null=True, blank=True)
 
     is_verified = models.BooleanField(default=False)
 
