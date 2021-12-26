@@ -15,13 +15,15 @@ class Product(Entity):
     name = models.CharField(verbose_name='name', max_length=255)
     image = models.CharField(verbose_name='image', max_length=255)
     description = models.TextField('description', null=True, blank=True)
-    weight = models.DecimalField('weight',decimal_places=1,max_digits=10, null=True, blank=True)
+    weight = models.DecimalField('weight', decimal_places=1, max_digits=10, null=True, blank=True)
     width = models.FloatField('width', null=True, blank=True)
     height = models.FloatField('height', null=True, blank=True)
     length = models.FloatField('length', null=True, blank=True)
-    on_charge = models.BooleanField('on charge',default=False)
     price = models.DecimalField('price', max_digits=10, decimal_places=2)
     discounted_price = models.DecimalField('discounted price', max_digits=10, decimal_places=2)
+    type = models.ForeignKey('commerce.Type', verbose_name='type', related_name='products',
+                             on_delete=models.SET_NULL,
+                             null=True, blank=True)
     vendor = models.ForeignKey('commerce.Vendor', verbose_name='vendor', related_name='products',
                                on_delete=models.SET_NULL,
                                null=True, blank=True)
@@ -31,8 +33,6 @@ class Product(Entity):
                                  on_delete=models.SET_NULL)
     is_featured = models.BooleanField('is featured')
     is_active = models.BooleanField('is active')
-
-
 
     def __str__(self):
         return self.name
@@ -80,7 +80,6 @@ class Wish_list(Entity):
     product = models.ForeignKey('commerce.Product', verbose_name='product',
                                 on_delete=models.CASCADE)
 
-
     def __str__(self):
         return self.product.name
 
@@ -110,12 +109,9 @@ class OrderStatus(Entity):
 
 
 class Category(Entity):
-
     name = models.CharField('name', max_length=255)
 
-
     is_active = models.BooleanField('is active')
-
 
     def __str__(self):
         return f'{self.name}'
@@ -125,16 +121,8 @@ class Category(Entity):
         verbose_name_plural = 'categories'
 
 
-
-
-
-
-
-
-
-class Vendor(Entity):
-    name = models.CharField('name', max_length=255)
-
+class Type(Entity):
+    name = models.CharField('name', max_length=225)
 
     def __str__(self):
         return self.name
@@ -144,5 +132,12 @@ class Vendor(Entity):
         super().save(*args, **kwargs)
 
 
+class Vendor(Entity):
+    name = models.CharField('name', max_length=255)
 
+    def __str__(self):
+        return self.name
 
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None, *args, **kwargs):
+        super().save(*args, **kwargs)
