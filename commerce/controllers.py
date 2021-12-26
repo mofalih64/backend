@@ -32,10 +32,10 @@ User = get_user_model()
 def list_products(
         request, *,
         q: str = None,
-        price_from: int = None,
-        price_to: int = None,
+        popular: bool = None,
+        best_seller: bool = None,
         vendor=None,
-        on_charge=None,
+        type=None,
         category=None,
 ):
     """
@@ -55,17 +55,17 @@ def list_products(
             Q(name__icontains=q) | Q(description__icontains=q)
         )
 
-    if price_from:
-        products_qs = products_qs.filter(discounted_price__gte=price_from)
+    if popular:
+        products_qs = products_qs.filter(popular=popular)
 
-    if price_to:
-        products_qs = products_qs.filter(discounted_price__lte=price_to)
+    if best_seller:
+        products_qs = products_qs.filter(best_seller=best_seller)
 
     if vendor:
         products_qs = products_qs.filter(vendor__name=vendor)
 
-    if on_charge:
-        products_qs = products_qs.filter(on_charge=on_charge)
+    if type:
+        products_qs = products_qs.filter(type__name=type)
 
     if category:
         products_qs = products_qs.filter(category__name=category)
@@ -127,6 +127,13 @@ select * from merchant where id in (mids) * 4 for (label, category and vendor)
 4+1
 
 """
+@products_controller.get('/{id}',response={
+    200:ProductOut,
+})
+
+def return_product(request,id):
+    product  = get_object_or_404(Product, id=id)
+    return product
 
 
 
