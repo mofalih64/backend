@@ -31,8 +31,9 @@ class Product(Entity):
                                  null=True,
                                  blank=True,
                                  on_delete=models.SET_NULL)
-    is_featured = models.BooleanField('is featured')
-    is_active = models.BooleanField('is active')
+    popular = models.BooleanField('is popular',default=False)
+    best_seller = models.BooleanField('is best seller',default=False)
+    quantity = models.IntegerField('quantity')
 
     def __str__(self):
         return self.name

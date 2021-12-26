@@ -50,6 +50,9 @@ class ProductOut(ModelSchema):
                         'type',
                         'vendor',
                         'category',
+                        'popular',
+                        'best_seller',
+                        'quantity',
 
                         ]
 
