@@ -17,6 +17,10 @@ class VendorOut(UUIDSchema):
     name: str
 
 
+class TypeOut(UUIDSchema):
+    name: str
+
+
 class CategoryOut(UUIDSchema):
     name: str
 
@@ -25,6 +29,8 @@ CategoryOut.update_forward_refs()
 
 
 class ProductOut(ModelSchema):
+    type: TypeOut
+
     vendor: VendorOut
 
     category: CategoryOut
@@ -39,9 +45,9 @@ class ProductOut(ModelSchema):
                         'length',
                         'width',
                         'height',
-                        'on_charge',
                         'price',
                         'discounted_price',
+                        'type',
                         'vendor',
                         'category',
 
@@ -55,15 +61,13 @@ class ProductOut(ModelSchema):
 class WishesSchema(Schema):
     product: ProductOut
 
+
 class WishesCreate(Schema):
-    product_id:UUID4
+    product_id: UUID4
 
-class WishesOut(UUIDSchema,WishesSchema):
+
+class WishesOut(UUIDSchema, WishesSchema):
     pass
-
-
-
-
 
 
 class ItemSchema(Schema):
