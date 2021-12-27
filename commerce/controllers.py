@@ -23,8 +23,6 @@ wishes_controller = Router(tags=['wish list'])
 User = get_user_model()
 
 
-
-
 @products_controller.get('', summary='List all products', response={
     200: List[ProductOut],
     404: MessageOut
@@ -44,8 +42,8 @@ def list_products(
      - **last_name**
      - and **list of Items** *(product + amount)*
     """
-    products_qs = Product.objects.filter(is_active=True)\
-        .select_related('vendor', 'category',)
+    products_qs = Product.objects.all() \
+        .select_related('vendor', 'category', )
 
     if not products_qs:
         return 404, {'detail': 'No products found'}
@@ -127,22 +125,22 @@ select * from merchant where id in (mids) * 4 for (label, category and vendor)
 4+1
 
 """
-@products_controller.get('/{id}',response={
-    200:ProductOut,
-})
 
-def return_product(request,id):
-    product  = get_object_or_404(Product, id=id)
+
+@products_controller.get('/{id}', response={
+    200: ProductOut,
+})
+def return_product(request, id):
+    product = get_object_or_404(Product, id=id)
     return product
 
 
-
-@wishes_controller.get('wishes list', response={
+@wishes_controller.get('wishes list', auth=GlobalAuth(), response={
     200: List[WishesOut],
     404: MessageOut
 })
 def view_WishesList(request):
-    wishes_items = Item.objects.filter(user=User.objects.first())
+    wishes_items = Item.objects.filter(user=User.objects.filter(id=request.auth['pk']))
 
     if wishes_items:
         return wishes_items
@@ -150,39 +148,36 @@ def view_WishesList(request):
     return 404, {'detail': 'Your wishes list is empty!'}
 
 
-
-
-
-@wishes_controller.post('add-to-wishes', response={
+@wishes_controller.post('add-to-wishes', auth=GlobalAuth(), response={
     200: MessageOut,
     # 400: MessageOut
 })
 def add_update_wishes(request, wishes_in: WishesCreate):
     try:
-        wish = Wish_list.objects.get(product_id=wishes_in.product_id, user=User.objects.first())
+        wish = Wish_list.objects.get(product_id=wishes_in.product_id, user=User.objects.filter(id=request.auth['pk']))
         wish.save()
     except Item.DoesNotExist:
-        Wish_list.objects.create(**wishes_in.dict(), user=User.objects.first())
+        Wish_list.objects.create(**wishes_in.dict(), user=User.objects.filter(id=request.auth['pk']))
 
     return 200, {'detail': 'Added to wish list successfully'}
 
-@wishes_controller.delete('wish/{id}', response={
+
+@wishes_controller.delete('wish/{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_wish(request, id: UUID4):
-    wish = get_object_or_404(Wish_list, id=id, user=User.objects.first())
+    wish = get_object_or_404(Wish_list, id=id, user=User.objects.filter(id=request.auth['pk']))
     wish.delete()
 
     return 204, {'detail': 'wish deleted!'}
 
 
-
-@order_controller.get('cart', response={
+@order_controller.get('cart', auth=GlobalAuth(), response={
     200: List[ItemOut],
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.first(), ordered=False)
+    cart_items = Item.objects.filter(user=User.objects.filter(id=request.auth['pk']), ordered=False)
 
     if cart_items:
         return cart_items
@@ -190,26 +185,26 @@ def view_cart(request):
     return 404, {'detail': 'Your cart is empty, go shop like crazy!'}
 
 
-@order_controller.post('add-to-cart', response={
+@order_controller.post('add-to-cart', auth=GlobalAuth(), response={
     200: MessageOut,
     # 400: MessageOut
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.first())
+        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.filter(id=request.auth['pk']))
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.first())
+        Item.objects.create(**item_in.dict(), user=User.objects.filter(id=request.auth['pk']))
 
     return 200, {'detail': 'Added to cart successfully'}
 
 
-@order_controller.post('item/{id}/reduce-quantity', response={
+@order_controller.post('item/{id}/reduce-quantity', auth=GlobalAuth(), response={
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=User.objects.filter(id=request.auth['pk']))
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -219,11 +214,11 @@ def reduce_item_quantity(request, id: UUID4):
     return 200, {'detail': 'Item quantity reduced successfully!'}
 
 
-@order_controller.delete('item/{id}', response={
+@order_controller.delete('item/{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.first())
+    item = get_object_or_404(Item, id=id, user=User.objects.filter(id=request.auth['pk']))
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -243,13 +238,13 @@ def create_order(request):
     '''
 
     order_qs = Order.objects.create(
-        user=User.objects.first(),
+        user=User.objects.filter(id=request.auth['pk']),
         status=OrderStatus.objects.get(is_default=True),
         ref_code=generate_ref_code(),
         ordered=False,
     )
 
-    user_items = Item.objects.filter(user=User.objects.first()).filter(ordered=False)
+    user_items = Item.objects.filter(user=User.objects.filter(id=request.auth['pk'])).filter(ordered=False)
 
     order_qs.items.add(*user_items)
     order_qs.total = order_qs.order_total
