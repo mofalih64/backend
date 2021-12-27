@@ -15,10 +15,7 @@ class Product(Entity):
     name = models.CharField(verbose_name='name', max_length=255)
     image = models.CharField(verbose_name='image', max_length=255)
     description = models.TextField('description', null=True, blank=True)
-    weight = models.DecimalField('weight', decimal_places=1, max_digits=10, null=True, blank=True)
-    width = models.FloatField('width', null=True, blank=True)
-    height = models.FloatField('height', null=True, blank=True)
-    length = models.FloatField('length', null=True, blank=True)
+
     price = models.DecimalField('price', max_digits=10, decimal_places=2)
     discounted_price = models.DecimalField('discounted price', max_digits=10, decimal_places=2)
     type = models.ForeignKey('commerce.Type', verbose_name='type', related_name='products',
