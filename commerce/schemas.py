@@ -5,7 +5,7 @@ from ninja import ModelSchema, Schema
 from ninja.orm import create_schema
 from pydantic import UUID4
 
-from commerce.models import Product
+from commerce.models import Product, Order
 
 
 class UUIDSchema(Schema):
@@ -86,10 +86,11 @@ class ItemOut(UUIDSchema, ItemSchema):
     pass
 
 
-class OrderOut(Schema):
-    id:UUID4
-    created:datetime
-    items:ItemOut
-    total:str
+class OrderOut(ModelSchema):
+    class Config:
+        model = Order
+        model_fields = ['id','created','items']
+
+
 
 
