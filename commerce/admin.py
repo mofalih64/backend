@@ -1,7 +1,7 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
-from commerce.models import Product, Order, Item, OrderStatus, Category, Vendor, Wish_list, Type
+from commerce.models import Product, Order, Item, Category, Vendor, Wish_list, Type
 
 
 class ProductAdmin(admin.ModelAdmin):
@@ -15,7 +15,7 @@ admin.site.register(Order)
 admin.site.register(Item)
 admin.site.register(Wish_list)
 
-admin.site.register(OrderStatus)
+
 admin.site.register(Category)
 admin.site.register(Vendor)
 admin.site.register(Type)
