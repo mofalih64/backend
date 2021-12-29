@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 
 from ninja import ModelSchema, Schema
@@ -83,3 +84,12 @@ class ItemCreate(Schema):
 
 class ItemOut(UUIDSchema, ItemSchema):
     pass
+
+
+class OrderOut(Schema):
+    id:UUID4
+    created:datetime
+    items:ItemOut
+    total:str
+
+

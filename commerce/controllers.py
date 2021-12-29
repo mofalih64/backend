@@ -9,9 +9,9 @@ from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Product, Category, Vendor, Item, Order, OrderStatus, Wish_list
+from commerce.models import Product, Category, Vendor, Item, Order, Wish_list
 from commerce.schemas import ProductOut, VendorOut, ItemOut, ItemSchema, ItemCreate, CategoryOut, WishesCreate, \
-    WishesOut
+    WishesOut, OrderOut
 from config.utils.schemas import MessageOut
 
 products_controller = Router(tags=['products'])
@@ -140,7 +140,8 @@ def return_product(request, id):
     404: MessageOut
 })
 def view_WishesList(request):
-    wishes_items = Item.objects.filter(user=User.objects.filter(id=request.auth['pk']))
+    user = User.objects.get(id=request.auth['pk'])
+    wishes_items = Wish_list.objects.filter(user=user)
 
     if wishes_items:
         return wishes_items
@@ -150,23 +151,25 @@ def view_WishesList(request):
 
 @wishes_controller.post('add-to-wishes', auth=GlobalAuth(), response={
     200: MessageOut,
-    # 400: MessageOut
+    400: MessageOut
 })
 def add_update_wishes(request, wishes_in: WishesCreate):
-    try:
-        wish = Wish_list.objects.get(product_id=wishes_in.product_id, user=User.objects.filter(id=request.auth['pk']))
-        wish.save()
-    except Item.DoesNotExist:
-        Wish_list.objects.create(**wishes_in.dict(), user=User.objects.filter(id=request.auth['pk']))
+
+    user = User.objects.get(id=request.auth['pk'])
+
+    product = get_object_or_404(Product,id=wishes_in.product_id)
+    wish = Wish_list.objects.get_or_create(product=product,user=user)
+
+    #Wish_list.objects.create(**wishes_in.dict(), user=user)
 
     return 200, {'detail': 'Added to wish list successfully'}
-
 
 @wishes_controller.delete('wish/{id}', auth=GlobalAuth(), response={
     204: MessageOut
 })
 def delete_wish(request, id: UUID4):
-    wish = get_object_or_404(Wish_list, id=id, user=User.objects.filter(id=request.auth['pk']))
+    user = User.objects.get(id=request.auth['pk'])
+    wish = get_object_or_404(Wish_list, id=id, user=user)
     wish.delete()
 
     return 204, {'detail': 'wish deleted!'}
@@ -177,7 +180,8 @@ def delete_wish(request, id: UUID4):
     404: MessageOut
 })
 def view_cart(request):
-    cart_items = Item.objects.filter(user=User.objects.filter(id=request.auth['pk']), ordered=False)
+    uesr = User.objects.get(id=request.auth['pk'])
+    cart_items = Item.objects.filter(user=uesr, ordered=False)
 
     if cart_items:
         return cart_items
@@ -191,11 +195,12 @@ def view_cart(request):
 })
 def add_update_cart(request, item_in: ItemCreate):
     try:
-        item = Item.objects.get(product_id=item_in.product_id, user=User.objects.filter(id=request.auth['pk']))
+        user = User.objects.get(id=request.auth['pk'])
+        item = Item.objects.get(product_id=item_in.product_id, user=user)
         item.item_qty += 1
         item.save()
     except Item.DoesNotExist:
-        Item.objects.create(**item_in.dict(), user=User.objects.filter(id=request.auth['pk']))
+        Item.objects.create(**item_in.dict(), user=user)
 
     return 200, {'detail': 'Added to cart successfully'}
 
@@ -204,7 +209,8 @@ def add_update_cart(request, item_in: ItemCreate):
     200: MessageOut,
 })
 def reduce_item_quantity(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.filter(id=request.auth['pk']))
+    user = User.objects.get(id=request.auth['pk'])
+    item = get_object_or_404(Item, id=id, user=user)
     if item.item_qty <= 1:
         item.delete()
         return 200, {'detail': 'Item deleted!'}
@@ -218,7 +224,8 @@ def reduce_item_quantity(request, id: UUID4):
     204: MessageOut
 })
 def delete_item(request, id: UUID4):
-    item = get_object_or_404(Item, id=id, user=User.objects.filter(id=request.auth['pk']))
+    user = User.objects.get(id=request.auth['pk'])
+    item = get_object_or_404(Item, id=id, user=user)
     item.delete()
 
     return 204, {'detail': 'Item deleted!'}
@@ -233,18 +240,18 @@ def create_order(request):
     '''
     * add items and mark (ordered) field as True
     * add ref_number
-    * add NEW status
+
     * calculate the total
     '''
-
+    user = User.objects.get(id=request.auth['pk'])
     order_qs = Order.objects.create(
-        user=User.objects.filter(id=request.auth['pk']),
-        status=OrderStatus.objects.get(is_default=True),
+        user=user,
+
         ref_code=generate_ref_code(),
         ordered=False,
     )
 
-    user_items = Item.objects.filter(user=User.objects.filter(id=request.auth['pk'])).filter(ordered=False)
+    user_items = Item.objects.filter(user=user).filter(ordered=False)
 
     order_qs.items.add(*user_items)
     order_qs.total = order_qs.order_total
@@ -252,3 +259,11 @@ def create_order(request):
     order_qs.save()
 
     return {'detail': 'order created successfully'}
+
+@order_controller.get('list_orders',auth=GlobalAuth(),response={
+    200:List[OrderOut],
+})
+def get_orders(request):
+    user = User.objects.get(id=request.auth['pk'])
+    orders = Order.objects.filter(user=user)
+    return orders

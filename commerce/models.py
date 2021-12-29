@@ -41,8 +41,7 @@ class Order(Entity):
                              on_delete=models.CASCADE)
     total = models.DecimalField('total', blank=True, null=True, max_digits=1000, decimal_places=0)
 
-    status = models.ForeignKey('commerce.OrderStatus', verbose_name='status', related_name='orders',
-                               on_delete=models.CASCADE)
+
     note = models.CharField('note', null=True, blank=True, max_length=255)
     ref_code = models.CharField('ref code', max_length=255)
     ordered = models.BooleanField('ordered')
@@ -82,28 +81,7 @@ class Wish_list(Entity):
         return self.product.name
 
 
-class OrderStatus(Entity):
-    NEW = 'NEW'  # Order with reference created, items are in the basket.
-    # CREATED = 'CREATED'  # Created with items and pending payment.
-    # HOLD = 'HOLD'  # Stock reduced but still awaiting payment.
-    # FAILED = 'FAILED'  # Payment failed, retry is available.
-    # CANCELLED = 'CANCELLED'  # Cancelled by seller, stock increased.
-    PROCESSING = 'PROCESSING'  # Payment confirmed, processing order.
-    SHIPPED = 'SHIPPED'  # Shipped to customer.
-    COMPLETED = 'COMPLETED'  # Completed and received by customer.
-    REFUNDED = 'REFUNDED'  # Fully refunded by seller.
 
-    title = models.CharField('title', max_length=255, choices=[
-        (NEW, NEW),
-        (PROCESSING, PROCESSING),
-        (SHIPPED, SHIPPED),
-        (COMPLETED, COMPLETED),
-        (REFUNDED, REFUNDED),
-    ])
-    is_default = models.BooleanField('is default')
-
-    def __str__(self):
-        return self.title
 
 
 class Category(Entity):
