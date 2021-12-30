@@ -267,3 +267,11 @@ def get_orders(request):
     user = User.objects.get(id=request.auth['pk'])
     orders = Order.objects.filter(user=user)
     return orders
+
+@order_controller.get('order_info/{id}',auth=GlobalAuth(),response={
+    200:ItemOut
+})
+def get_ItemInfo(request,id:UUID4):
+    uesr = User.objects.get(id=request.auth['pk'])
+    item = get_object_or_404(Item,id=id,user=uesr)
+    return item
